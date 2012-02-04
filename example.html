@@ -1,0 +1,86 @@
+<html>
+    <head>
+        <script src="oigantt.js" type="text/javascript"></script>
+        <script type="text/javascript">
+            function newDiv(id) {
+                var div = document.createElement("div");
+                document.getElementById(id).appendChild(div);
+                div.id = "oi" + (""+Math.random()).slice(5);
+                return div.id;
+            }
+            Date.prototype.dateFormat = function dateFormat(format) {
+                if(format=="d/m/Y") 
+                    return this.getDate() + "/" + this.getMonth() + "/" + this.getYear();
+            }
+            function gettext(x) {
+                return x;
+            }
+        </script>
+        <style>
+            #gantt {
+              overflow-x: scroll;
+              overflow-y: hidden;
+            }
+            div.ganttbg {
+                z-index: 0;
+                background: white;
+                position: relative;
+            }
+            div.ganttperiod {
+                height: 100%;
+                border-right: solid gray 1px;
+                margin-top: -15px;
+                float: left;
+            }
+            div.ganttbg0 {
+                width: 100%;
+                background: #E8E8E8;
+                z-index: -1;
+            }
+            div.ganttbar1 {
+                float: left;
+                height: 10px;
+                background: #0094B5;
+            }
+            div.ganttbar2 {
+                float: left;
+                height: 10px;
+                background: #D0574C;
+            }
+            div.ganttbar3 {
+                float: left;
+                height: 10px;
+                background: #68274E;
+            }
+            div.gantthighlight {
+                border: solid 5px red;
+                margin: -5px;
+            }
+            div.gantttoday {
+                height: 100%;
+                border: 1px red solid;
+                position: absolute;
+                top: 0;
+                z-index: 1;
+            }
+            #ganttspace {
+                position: absolute;
+                width: 800px;
+                z-index: 0;
+                background: #6C6D6E;
+                color: white;
+            }
+            .ganttdate {
+                font-weight: bold;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="gantt"></div>
+        <script>
+            gantt = new OIGantt("gantt", new Date(2012,1,1), new Date(2012,6,1));
+            gantt.addBar(1, [new Date(2012,1,2),new Date(2012,1,8),new Date(2012,1,17),new Date(2012,1,31)]);
+            gantt.redraw();
+        </script>
+    </body>
+</html>

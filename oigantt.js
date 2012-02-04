@@ -63,7 +63,7 @@ function OIGantt(divid, startDate, endDate) {
     this.drawTimeline();
 }
 OIGantt.prototype.drawTimeline = function drawTimeline() {
-    this.header.innerHTML = this.startDate.dateFormat("d/m/Y");
+    if(this.startDate.getDate() < 29) this.header.innerHTML = this.startDate.dateFormat("d/m/Y");
     this.graph.style.width = (this.endDate - this.startDate + this.period) / this.scale+"px";
     
     for(var day = new Date(this.startDate); day<this.endDate; day.setDate(day.getDate()+1)) {
@@ -74,9 +74,11 @@ OIGantt.prototype.drawTimeline = function drawTimeline() {
         daydiv.innerHTML = day.getDate();
         this.graph.appendChild(daydiv);
     }
-    var today = document.getElementById(newDiv(this.graph.id));
-    today.className = "gantttoday";
-    today.style.left = (new Date() - this.startDate) / this.scale + "px";
+    if(new Date() > this.startDate && new Date() < this.endDate) {
+        var today = document.getElementById(newDiv(this.graph.id));
+        today.className = "gantttoday";
+        today.style.left = (new Date() - this.startDate) / this.scale + "px";
+    }
 }
 OIGantt.prototype.redraw = function redraw(barNb) {
     this.graph.style.height = (this.rowHeight * this.bars.length + this.headerHeight)+"px";
