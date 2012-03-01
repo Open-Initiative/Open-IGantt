@@ -1,0 +1,57 @@
+#gantt {
+  overflow-x: scroll;
+  overflow-y: hidden;
+}
+div.ganttbg {
+    z-index: 0;
+    background: white;
+    position: relative;
+}
+div.ganttperiod {
+    height: 100%;
+    border-right: solid gray 1px;
+    margin-top: -15px;
+    float: left;
+}
+div.ganttbg0 {
+    width: 100%;
+    background: #E8E8E8;
+    z-index: -1;
+}
+div.ganttbar1 {
+    float: left;
+    height: 10px;
+    background: #0094B5;
+}
+div.ganttbar2 {
+    float: left;
+    height: 10px;
+    background: #D0574C;
+}
+div.ganttbar3 {
+    float: left;
+    height: 10px;
+    background: #68274E;
+}
+div.gantthighlight {
+    border: solid 5px red;
+    margin: -5px;
+}
+div.gantttoday {
+    height: 100%;
+    border: 1px red solid;
+    position: absolute;
+    top: 0;
+    z-index: 1;
+}
+#ganttspace {
+    position: absolute;
+    width: 800px;
+    z-index: 0;
+    background: #6C6D6E;
+    color: white;
+}
+.ganttdate {
+    font-weight: bold;
+}
+
