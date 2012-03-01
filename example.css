@@ -9,7 +9,7 @@ div.ganttbg {
 }
 div.ganttperiod {
     height: 100%;
-    border-right: solid gray 1px;
+    border-right: solid #D0D0D0 1px;
     margin-top: -15px;
     float: left;
 }
