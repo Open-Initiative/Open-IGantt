@@ -29,7 +29,7 @@ GanttBar.prototype.draw = function() {
         this.bardiv = document.getElementById(newDiv(this.gantt.div.id));
         this.bardiv.style.position = "absolute";
         this.bardiv.style.left = ((isNaN(this.dates[0])?0:(this.dates[0] - this.gantt.startDate)) / this.gantt.scale) + "px";
-        this.bardiv.style.top = (this.gantt.bars.indexOf(this) * this.gantt.rowHeight + this.gantt.headerHeight) + "px";
+        this.bardiv.style.top = (this.gantt.bars.indexOf(this) * this.gantt.rowHeight + this.gantt.headerHeight+10) + "px";
         
         var i;
         for(i=0; i < this.dates.length-1; i++)
@@ -42,7 +42,7 @@ function OIGantt(divid, startDate, endDate) {
     this.periods = [1000*60*5, 1000*60*60, 1000*60*60*24, 1000*60*60*24*7, "month", "year"];
     this.scale = 1000*60*60;
     this.period = 1000*60*60*24;
-    this.rowHeight = 20;
+    this.rowHeight = 25;
     this.headerHeight = 31;
     this.space = null;
     
