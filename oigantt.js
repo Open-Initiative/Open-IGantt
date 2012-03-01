@@ -46,6 +46,9 @@ GanttBar.prototype.addPhase = function(bardiv, begin, end, className, title) {
     div.style.width = (((isNaN(end) || isNaN(begin))?0:(end - begin)) / this.gantt.scales[this.gantt.scale]) + "px";
     div.className = className;
     div.title = title;
+    var anchor = document.createElement("div");
+    anchor.className = "ganttanchor";
+    div.appendChild(anchor);
     return div;
 }
 GanttBar.prototype.draw = function() {
@@ -73,9 +76,9 @@ GanttBar.prototype.draw = function() {
 }
 
 function OIGantt(divid, startDate, endDate) {
-    this.scales = [1000*60*5, 1000*60*60, 1000*60*60*24, 1000*60*60*24*7, "month", "year"];
-    this.unitFormats = ["i", "H", "d", "d", "m", "Y"];
-    this.periodFormats = ["H:i", "H:i", "d/m/Y", "d/m/Y", "m/Y", "Y"];
+    this.scales = [1000*60*5, 1000*60*60, 1000*60*60*6, 1000*60*60*24, 1000*60*60*24*7, "month", "year"];
+    this.unitFormats = ["i", "H:i", "H:i", "d", "d", "m", "Y"];
+    this.periodFormats = ["H:i", "H:i", "H:i", "d/m/Y", "d/m/Y", "m/Y", "Y"];
     this.scale = 1;
     this.rowHeight = 25;
     this.headerHeight = 31;
@@ -97,16 +100,16 @@ function OIGantt(divid, startDate, endDate) {
 }
 OIGantt.prototype.drawTimeline = function drawTimeline() {
     this.graph.innerHTML = "";
-    if(this.startDate.getDate() < 29) this.header.innerHTML = dateFormat(this.periodFormats[this.scale+2], this.startDate);
-    this.graph.style.width = (this.endDate - this.startDate + this.scales[this.scale+1]) / this.scales[this.scale]+"px";
+//    if(this.startDate.getDate() < 29) this.header.innerHTML = dateFormat(this.periodFormats[this.scale+2], this.startDate);
+    this.graph.style.width = (this.endDate - this.startDate + this.scales[this.scale+2]) / this.scales[this.scale]+"px";
     
-    var periodWidth = (this.scales[this.scale+1]/this.scales[this.scale]-1)+"px";
-    for(var period = new Date(this.startDate); period<this.endDate; period.setTime(period.getTime()+this.scales[this.scale+1])) {
+    var periodWidth = (this.scales[this.scale+2]/this.scales[this.scale]-1)+"px";
+    for(var period = new Date(this.startDate); period<this.endDate; period.setTime(period.getTime()+this.scales[this.scale+2])) {
 //        if(period.getDate()==1) this.graph.innerHTML += '<div style="float: left;position: relative;top: -'+this.headerHeight+'px;width:0">'+period.dateFormat("d/m/Y")+'</div>';
         var periodDiv = document.createElement("div");
         periodDiv.className = "ganttperiod";
         periodDiv.style.width = periodWidth;
-        periodDiv.innerHTML = dateFormat(this.unitFormats[this.scale+1], period);
+        periodDiv.innerHTML = dateFormat(this.unitFormats[this.scale+2], period);
         this.graph.appendChild(periodDiv);
     }
     if(new Date() > this.startDate && new Date() < this.endDate) {

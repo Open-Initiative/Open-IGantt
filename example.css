@@ -18,6 +18,13 @@ div.ganttbg0 {
     background: #E8E8E8;
     z-index: -1;
 }
+div.ganttanchor {
+    position: relative;
+    top: -5px;
+    height: 20px;
+    width: 5px;
+    background: green;
+}
 div.ganttbar1 {
     float: left;
     height: 10px;
