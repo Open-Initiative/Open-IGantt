@@ -1,39 +1,5 @@
 var one_day = 1000*60*60*24;
 
-function dateFormat(format, date) {
-    if (date == undefined) {
-        date = new Date();
-    }
-    if (typeof date == 'number') {
-        time = new Date();
-        time.setTime(date);
-        date = time;
-    } else if (typeof date == 'string') {
-        date = new Date(date);
-    }
-    var fullYear = date.getYear();
-    if (fullYear < 1000) {
-        fullYear = fullYear + 1900;
-    }
-    var hour = date.getHours();
-    var day = date.getDate();
-    var month = date.getMonth() + 1;
-    var minute = date.getMinutes();
-    var seconde = date.getSeconds();
-    var milliSeconde = date.getMilliseconds();
-    var reg = new RegExp('(d|m|Y|H|i|s)', 'g');
-    var replacement = new Array();
-    replacement['d'] = day < 10 ? '0' + day : day;
-    replacement['m'] = month < 10 ? '0' + month : month;
-    replacement['Y'] = fullYear;
-    replacement['H'] = hour < 10 ? '0' + hour : hour;
-    replacement['i'] = minute < 10 ? '0' + minute : minute;
-    replacement['s'] = seconde < 10 ? '0' + seconde : seconde;
-    return format.replace(reg, function($0) {
-        return ($0 in replacement) ? replacement[$0] : $0.slice(1,
-                $0.length - 1);
-    });
-}
 function GanttBar(gantt, dates, bgClass) {
     this.gantt = gantt;
     this.bardiv = null;
@@ -41,17 +7,53 @@ function GanttBar(gantt, dates, bgClass) {
     this.bgClass = bgClass;
     this.dates = dates;
 }
-GanttBar.prototype.addPhase = function(bardiv, begin, end, className, title) {
+GanttBar.prototype.updateDates = function updateDates() {
+    var anchor, i, scale = this.gantt.scales[this.gantt.scale];
+    var startDate = new Date(this.gantt.startDate.getTime() + this.bardiv.offsetLeft * scale);
+    var anchors = this.bardiv.getElementsByClassName("ganttanchor");
+    for(anchor = anchors[i=0]; i < anchors.length; anchor = anchors[++i])
+        this.dates[i] = new Date(startDate.getTime() + anchor.offsetLeft * scale);
+}
+GanttBar.prototype.createAnchor = function createAnchor() {
+    var anchor = document.createElement("div");
+    anchor.className = "ganttanchor";
+    anchor.style.cursor = "pointer";
+    anchor.bar = this;
+    this.bardiv.appendChild(anchor);
+    
+    anchor.onmousedown = makeObjectCallback(function(event){
+            this.bar.draggedPhase = this.previousSibling;
+            this.bar.startX = event.clientX - (this.previousSibling?this.previousSibling.clientWidth:0);
+            document.onmousemove = makeObjectCallback(this.bar.dragAnchor, this.bar);
+            document.onmouseup = makeObjectCallback(this.bar.dropAnchor, this.bar);
+            event.stopPropagation();
+            return false;
+        }, anchor);
+}
+GanttBar.prototype.dragAnchor = function dragAnchor(event){
+    if(this.draggedPhase) this.draggedPhase.style.width = event.clientX - this.startX + "px";
+    else this.bardiv.style.left = event.clientX + "px";
+    event.stopPropagation();
+    return false;
+}
+GanttBar.prototype.dropAnchor = function dropAnchor(event){
+    this.draggedAnchor = null;
+    document.onmousemove = null;
+    document.onmouseup = null;
+    this.draggedPhase = null;
+    this.updateDates();
+    event.stopPropagation();
+    return false;
+}
+GanttBar.prototype.addPhase = function addPhase(begin, end, className, title) {
     var div = document.getElementById(newDiv(this.bardiv.id));
     div.style.width = (((isNaN(end) || isNaN(begin))?0:(end - begin)) / this.gantt.scales[this.gantt.scale]) + "px";
     div.className = className;
     div.title = title;
-    var anchor = document.createElement("div");
-    anchor.className = "ganttanchor";
-    div.appendChild(anchor);
+    this.createAnchor();
     return div;
 }
-GanttBar.prototype.draw = function() {
+GanttBar.prototype.draw = function draw() {
     if(this.bgdiv) this.gantt.div.removeChild(this.bgdiv);
     if(this.bardiv) this.gantt.div.removeChild(this.bardiv);
     
@@ -67,10 +69,12 @@ GanttBar.prototype.draw = function() {
         this.bardiv.style.position = "absolute";
         this.bardiv.style.left = ((isNaN(this.dates[0])?0:(this.dates[0] - this.gantt.startDate)) / this.gantt.scales[this.gantt.scale]) + "px";
         this.bardiv.style.top = (this.gantt.bars.indexOf(this) * this.gantt.rowHeight + this.gantt.headerHeight+10) + "px";
+        this.bardiv.style.width = ((this.dates[this.dates.length-1] - this.dates[0]) / this.gantt.scales[this.gantt.scale] + 10) + "px";
+        this.createAnchor();
         
         var i;
         for(i=0; i < this.dates.length-1; i++)
-            this.addPhase(this.bardiv, this.dates[i], this.dates[i+1], "ganttbar"+(i+1),
+            this.addPhase(this.dates[i], this.dates[i+1], "ganttbar"+(i+1),
                 gettext("Phase"+i));
     }
 }
