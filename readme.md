@@ -1,7 +1,7 @@
 Open IGantt
 ===========
 
-Open IGantt is a free open source dynamic javascript based G
+Open IGantt is a free open source dynamic javascript based Gantt diagram viewer.
 
 Features
 --------
