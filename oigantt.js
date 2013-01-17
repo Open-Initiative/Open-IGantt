@@ -102,18 +102,43 @@ function OIGantt(divid, startDate, endDate) {
     this.div.style.width = ((this.endDate - this.startDate) / this.scales[this.scale]) + "px";
     this.header.style.height = this.headerHeight + "px";
 }
+OIGantt.prototype.newPeriod = function newPeriod(period) {
+    switch(this.scale){
+        case 0: return period.getHours()<6;
+        case 1: return period.getDay()==1;
+        case 2: return period.getDate()<8;
+        case 3: return period.getMonth()==1;
+    }
+}
+OIGantt.prototype.nextPeriod = function nextPeriod(period) {
+    if(this.scale == 3) {
+        var nextPeriod = new Date(period);
+        nextPeriod.setMonth(nextPeriod.getMonth()+1);
+        return nextPeriod;
+    }
+    return period.setTime(period.getTime()+this.scales[this.scale+2]);
+}
 OIGantt.prototype.drawTimeline = function drawTimeline() {
     this.graph.innerHTML = "";
-//    if(this.startDate.getDate() < 29) this.header.innerHTML = dateFormat(this.periodFormats[this.scale+2], this.startDate);
+    if(this.startDate.getDate() < 29) this.header.innerHTML = this.startDate.dateFormat(this.periodFormats[this.scale+3]);
     this.graph.style.width = (this.endDate - this.startDate + this.scales[this.scale+2]) / this.scales[this.scale]+"px";
     
-    var periodWidth = (this.scales[this.scale+2]/this.scales[this.scale]-1)+"px";
-    for(var period = new Date(this.startDate); period<this.endDate; period.setTime(period.getTime()+this.scales[this.scale+2])) {
-//        if(period.getDate()==1) this.graph.innerHTML += '<div style="float: left;position: relative;top: -'+this.headerHeight+'px;width:0">'+period.dateFormat("d/m/Y")+'</div>';
+    var periodWidth = this.scales[this.scale+2]/this.scales[this.scale] + "px";
+    for(var period = new Date(this.startDate); period<this.endDate; this.nextPeriod(period)) {
         var periodDiv = document.createElement("div");
         periodDiv.className = "ganttperiod";
         periodDiv.style.width = periodWidth;
-        periodDiv.innerHTML = dateFormat(this.unitFormats[this.scale+2], period);
+        periodDiv.innerHTML = period.dateFormat(this.unitFormats[this.scale+2]);
+        if(this.newPeriod(period)) {
+            periodDiv.className += " ganttnewperiod";
+            periodDiv.style.width = (periodDiv.clientWidth - 1) + "px";
+            var div = document.getElementById(newDiv(this.graph.id));
+            div.style.cssFloat = "left";
+            div.style.position = "relative";
+            div.style.width = 0;
+            div.style.top = - this.headerHeight + "px";
+            div.innerHTML = period.dateFormat(this.periodFormats[this.scale+3]);
+        }
         this.graph.appendChild(periodDiv);
     }
     if(new Date() > this.startDate && new Date() < this.endDate) {

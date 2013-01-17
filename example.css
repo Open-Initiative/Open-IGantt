@@ -2,23 +2,25 @@
   overflow-x: scroll;
   overflow-y: hidden;
 }
-div.ganttbg {
+.ganttbg {
     z-index: 0;
     background: white;
     position: relative;
 }
-div.ganttperiod {
+.ganttperiod {
     height: 100%;
-    border-right: solid #D0D0D0 1px;
     margin-top: -15px;
     float: left;
 }
-div.ganttbg0 {
+.ganttnewperiod {
+    border-left: solid 1px;
+}
+.ganttbg0 {
     width: 100%;
     background: #E8E8E8;
     z-index: -1;
 }
-div.ganttanchor {
+.ganttanchor {
     position: relative;
     top: -5px;
     height: 20px;
@@ -26,26 +28,26 @@ div.ganttanchor {
     background: green;
     float: left;
 }
-div.ganttbar1 {
+.ganttbar1 {
     float: left;
     height: 10px;
     background: #0094B5;
 }
-div.ganttbar2 {
+.ganttbar2 {
     float: left;
     height: 10px;
     background: #D0574C;
 }
-div.ganttbar3 {
+.ganttbar3 {
     float: left;
     height: 10px;
     background: #68274E;
 }
-div.gantthighlight {
+.gantthighlight {
     border: solid 5px red;
     margin: -5px;
 }
-div.gantttoday {
+.gantttoday {
     height: 100%;
     border: 1px red solid;
     position: absolute;

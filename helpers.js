@@ -10,27 +10,17 @@ function gettext(x) {
 function makeObjectCallback(method, object) {
     return function() {method.apply(object, arguments)};
 }
-function dateFormat(format, date) {
-    if (date == undefined) {
-        date = new Date();
-    }
-    if (typeof date == 'number') {
-        time = new Date();
-        time.setTime(date);
-        date = time;
-    } else if (typeof date == 'string') {
-        date = new Date(date);
-    }
-    var fullYear = date.getYear();
+Date.prototype.dateFormat = function dateFormat(format) {
+    var fullYear = this.getYear();
     if (fullYear < 1000) {
         fullYear = fullYear + 1900;
     }
-    var hour = date.getHours();
-    var day = date.getDate();
-    var month = date.getMonth() + 1;
-    var minute = date.getMinutes();
-    var seconde = date.getSeconds();
-    var milliSeconde = date.getMilliseconds();
+    var hour = this.getHours();
+    var day = this.getDate();
+    var month = this.getMonth() + 1;
+    var minute = this.getMinutes();
+    var seconde = this.getSeconds();
+    var milliSeconde = this.getMilliseconds();
     var reg = new RegExp('(d|m|Y|H|i|s)', 'g');
     var replacement = new Array();
     replacement['d'] = day < 10 ? '0' + day : day;
