@@ -1,7 +1,8 @@
 var one_day = 1000*60*60*24;
 
-function GanttBar(gantt, dates, bgClass) {
+function GanttBar(gantt, id, dates, bgClass) {
     this.gantt = gantt;
+    this.id = id;
     this.bardiv = null;
     this.bgdiv = null;
     this.bgClass = bgClass;
@@ -9,10 +10,12 @@ function GanttBar(gantt, dates, bgClass) {
 }
 GanttBar.prototype.updateDates = function updateDates() {
     var anchor, i, scale = this.gantt.scales[this.gantt.scale];
-    var startDate = new Date(this.gantt.startDate.getTime() + this.bardiv.offsetLeft * scale);
+    var startDate = this.gantt.startDate.add(this.bardiv.offsetLeft * scale);
     var anchors = this.bardiv.getElementsByClassName("ganttanchor");
-    for(anchor = anchors[i=0]; i < anchors.length; anchor = anchors[++i])
-        this.dates[i] = new Date(startDate.getTime() + anchor.offsetLeft * scale);
+    for(anchor = anchors[i=0]; i < anchors.length; anchor = anchors[++i]) {
+        this.dates[i] = startDate.add(anchor.offsetLeft * scale);
+        if(this.gantt.onUpdate) this.gantt.onUpdate(this.id, i, this.dates[i]);
+    }
 }
 GanttBar.prototype.createAnchor = function createAnchor() {
     var anchor = document.createElement("div");
@@ -31,7 +34,12 @@ GanttBar.prototype.createAnchor = function createAnchor() {
         }, anchor);
 }
 GanttBar.prototype.dragAnchor = function dragAnchor(event){
-    if(this.draggedPhase) this.draggedPhase.style.width = event.clientX - this.startX + "px";
+    if(this.draggedPhase) {
+        var newPhaseWidth = event.clientX - this.startX;
+        var newBarWidth = this.bardiv.clientWidth + newPhaseWidth - this.draggedPhase.clientWidth;
+        this.bardiv.style.width = newBarWidth + "px";
+        this.draggedPhase.style.width = newPhaseWidth + "px";
+    }
     else this.bardiv.style.left = event.clientX + "px";
     event.stopPropagation();
     return false;
@@ -81,78 +89,66 @@ GanttBar.prototype.draw = function draw() {
 
 function OIGantt(divid, startDate, endDate) {
     this.scales = [1000*60*5, 1000*60*60, 1000*60*60*6, 1000*60*60*24, 1000*60*60*24*7, "month", "year"];
-    this.unitFormats = ["i", "H:i", "H:i", "w", "w", "m", "Y"];
-    this.periodFormats = ["H:i", "H:i", "H:i", "d/m", "d/m", "m/Y", "Y"];
+    this.unitFormats = ["i", "H:i", "H:i", "w", "d/m/Y", "m", "Y"];
+//    this.periodFormats = ["H:i", "H:i", "H:i", "d/m", "d/m", "m/Y", "Y"];
     this.scale = 1;
     this.rowHeight = 25;
     this.headerHeight = 31;
     this.space = null;
     
-    parentdiv = document.getElementById(divid);
+    this.parentdiv = document.getElementById(divid);
+    this.parentdiv.onscroll = makeObjectCallback(this.drawTimeline, this);
     this.startDate = startDate || new Date();
-    this.endDate = new Date(Math.max(endDate, new Date(this.scales[this.scale]*parentdiv.style.width+(this.startDate.getTime()))));;
+    this.endDate = endDate || this.startDate.add(this.scales[this.scale]*parentdiv.style.width());
     this.bars = [];
     this.barids = {};
     this.space = null;
 
+    this.timeline = document.getElementById(divid).appendChild(document.createElement("canvas"));
+    this.timeline.style.position = "fixed";
     this.div = document.getElementById(divid).appendChild(document.createElement("div"));
-    this.graph = this.div.appendChild(document.createElement("table"));
     this.div.className = "ganttbg";
+    this.div.style.width = Math.max(this.parentdiv.clientWidth, (this.endDate-this.startDate)/this.scales[this.scale]);
 }
-OIGantt.prototype.newPeriod = function newPeriod(period) {
-    switch(this.scale){
-        case 0: return period.getHours()<6;
-        case 1: return period.getDay()==1;
-        case 2: return period.getDate()<8;
-        case 3: return period.getMonth()==1;
-    }
+OIGantt.prototype.getPeriodName = function getPeriodName(offset, formatIndex) {
+    var date = this.startDate.add((this.parentdiv.scrollLeft+offset)*this.scales[this.scale]);
+    return date.dateFormat(this.unitFormats[this.scale+formatIndex]);
 }
-OIGantt.prototype.nextPeriod = function nextPeriod(period) {
-    if(this.scale == 3) {
-        var nextPeriod = new Date(period);
-        nextPeriod.setMonth(nextPeriod.getMonth()+1);
-        return nextPeriod;
+OIGantt.prototype.strokePeriods = function strokePeriods(ctx, color, scaleoffset) {
+    var drawStartDate = this.startDate.add(this.parentdiv.scrollLeft*this.scales[this.scale]);
+    var offsetLeft = (drawStartDate.getTime() % this.scales[this.scale+scaleoffset]) / this.scales[this.scale];
+    var offsetTop = 40 - 10*scaleoffset;
+    var period = this.scales[this.scale+scaleoffset] / this.scales[this.scale];
+    
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.translate(.5,0); //disable antialiasing for odd width lines
+    for(var x=offsetLeft; x < ctx.canvas.width; x += period) {
+        ctx.strokeText(this.getPeriodName(x, scaleoffset), x+2, offsetTop);
+        ctx.moveTo(x,offsetTop);
+        ctx.lineTo(x,99);
     }
-    return period.setTime(period.getTime()+this.scales[this.scale+2]);
+    ctx.stroke();
 }
 OIGantt.prototype.drawTimeline = function drawTimeline() {
-    this.graph.innerHTML = "";
+    this.timeline.width = this.parentdiv.clientWidth;
+    this.timeline.height = this.rowHeight*this.bars.length + this.headerHeight;
+    var ctx = this.timeline.getContext("2d");
+    this.strokePeriods(ctx, "#ddd", 2); //draw light lines
+    this.strokePeriods(ctx, "black", 3); //draw dark lines
     
-    var trover = this.graph.appendChild(document.createElement("tr"));
-    trover.appendChild(document.createElement("th")).innerHTML = this.startDate.dateFormat(this.periodFormats[this.scale+3]);
-    var trperiod = this.graph.appendChild(document.createElement("tr"));
-    var tr = this.graph.appendChild(document.createElement("tr"));
-    var periodWidth = this.scales[this.scale+2]/this.scales[this.scale] + "px";
-    for(var period = new Date(this.startDate); period<this.endDate; this.nextPeriod(period)) {
-        var periodtd = document.createElement("td");
-        periodtd.style.width = periodWidth + "px";
-        periodtd.style.height = "100px";
-        var th = document.createElement("th");
-        th.style.width = periodWidth + "px";
-        th.innerHTML = period.dateFormat(this.unitFormats[this.scale+2]);
-        trperiod.appendChild(th);
-        
-        if(this.newPeriod(period)) {
-            periodtd.className += " ganttnewperiod";
-            periodtd.style.width = (periodtd.clientWidth - 1) + "px";
-            th.className += " ganttnewperiod";
-            
-            var th = trover.appendChild(document.createElement("th"));
-            th.colSpan = 7;
-            th.innerHTML = period.dateFormat(this.periodFormats[this.scale+3]);
-        }
-        
-        tr.appendChild(periodtd);
-    }
-    if(new Date() > this.startDate && new Date() < this.endDate) {
-        var today = this.graph.appendChild(document.createElement("div"));
-        today.className = "gantttoday";
-        today.style.left = (new Date() - this.startDate) / this.scales[this.scale] + "px";
+    if(new Date() > this.startDate && new Date() < this.endDate) { //line for today
+        ctx.beginPath();
+        ctx.strokeStyle = "red";
+        var x = (new Date() - this.startDate) / this.scales[this.scale]
+        ctx.moveTo(x,1);
+        ctx.lineTo(x,99);
+        ctx.stroke();
     }
 }
 OIGantt.prototype.redraw = function redraw(barNb) {
     this.drawTimeline();
-    this.graph.style.height = (this.rowHeight * this.bars.length + this.headerHeight)+"px";
     if(!barNb || barNb==-1) barNb = 0;
     for(var i=barNb; i<this.bars.length; i++) 
         this.bars[i].draw();
@@ -166,15 +162,16 @@ OIGantt.prototype.zoom = function zoom() {
     this.redraw();
 }
 OIGantt.prototype.addBar = function addBar(id, dates, afterid, bgClass) {
-    var newBar = new GanttBar(this, dates, "ganttbg"+(bgClass || 0));
+    var newBar = new GanttBar(this, id, dates, "ganttbg"+(bgClass || 0));
     var pos = this.bars.indexOf(this.barids[afterid]) + 1;
     this.bars.splice(pos, 0, newBar);
     this.barids[id] = newBar;
+    this.div.style.height = this.rowHeight*this.bars.length + this.headerHeight;
 }
 OIGantt.prototype.addSpace = function addSpace(afterid) {
     if(this.space) this.bars.splice(this.bars.indexOf(this.space), 1);
     var pos = this.bars.indexOf(this.barids[afterid]) + 1
-    this.bars.splice(pos, 0, new GanttBar(this, [], "ganttspace"));
+    this.bars.splice(pos, 0, new GanttBar(this, id, [], "ganttspace"));
     this.redraw();
     this.space = this.bars[pos];
     document.getElementById("ganttspace").style.top = (this.space.bgdiv.offsetTop+this.div.offsetTop) + "px";

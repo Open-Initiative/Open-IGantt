@@ -4,24 +4,12 @@
 }
 .ganttbg {
     z-index: 0;
-    background: white;
     position: relative;
-}
-.ganttbg table {
-    border-spacing: 0px;
-    border-collapse: collapse; 
-}
-.ganttperiod {
-    height: 100%;
-    margin-top: -15px;
-    float: left;
-}
-.ganttnewperiod {
-    border-left: solid 1px;
 }
 .ganttbg0 {
     width: 100%;
-    background: #E8E8E8;
+    background: #CCCCCC;
+    opacity: .3;
     z-index: -1;
 }
 .ganttanchor {
@@ -51,13 +39,6 @@
     border: solid 5px red;
     margin: -5px;
 }
-.gantttoday {
-    height: 100%;
-    border: 1px red solid;
-    position: absolute;
-    top: 0;
-    z-index: 1;
-}
 #ganttspace {
     position: absolute;
     width: 800px;
@@ -65,7 +46,3 @@
     background: #6C6D6E;
     color: white;
 }
-.ganttdate {
-    font-weight: bold;
-}
-
