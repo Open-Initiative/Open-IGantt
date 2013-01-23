@@ -91,14 +91,15 @@ function OIGantt(divid, startDate, endDate) {
     this.scales = [1000*60*5, 1000*60*60, 1000*60*60*6, 1000*60*60*24, 1000*60*60*24*7, "month", "year"];
     this.unitFormats = ["i", "H:i", "H:i", "w", "d/m/Y", "m", "Y"];
 //    this.periodFormats = ["H:i", "H:i", "H:i", "d/m", "d/m", "m/Y", "Y"];
-    this.scale = 1;
+    this.startDate = startDate || new Date();
+    this.endDate = endDate || this.startDate;
+    for(this.scale=0; (gantt.endDate-gantt.startDate)/this.scales[this.scale] > 1 || this.scale<5; this.scale++);
     this.rowHeight = 25;
     this.headerHeight = 31;
     this.space = null;
     
     this.parentdiv = document.getElementById(divid);
     this.parentdiv.onscroll = makeObjectCallback(this.drawTimeline, this);
-    this.startDate = startDate || new Date();
     this.endDate = endDate || this.startDate.add(this.scales[this.scale]*parentdiv.style.width());
     this.bars = [];
     this.barids = {};
@@ -154,7 +155,7 @@ OIGantt.prototype.redraw = function redraw(barNb) {
         this.bars[i].draw();
 }
 OIGantt.prototype.unzoom = function unzoom() {
-    if(this.scale < 3) this.scale++;
+    if(this.scale < 5) this.scale++;
     this.redraw();
 }
 OIGantt.prototype.zoom = function zoom() {
