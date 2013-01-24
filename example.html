@@ -14,7 +14,7 @@
         <div id="gantt"></div>
         <script>
             gantt = new OIGantt("gantt", new Date(2012,1,1), new Date(2016,6,1));
-            gantt.addBar(1, [new Date(2012,1,2),new Date(2012,1,8),new Date(2012,1,17),new Date(2012,1,31)]);
+            gantt.addLine(1, [new Date(2012,1,2),new Date(2012,1,8),new Date(2012,1,17),new Date(2012,1,31)]);
             gantt.redraw();
             gantt.onUpdate = function onUpdate(barid, number, date) {output.children[number].innerHTML = date.dateFormat('d/m/Y H:m:s');};
         </script>

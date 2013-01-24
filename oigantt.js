@@ -1,5 +1,3 @@
-var one_day = 1000*60*60*24;
-
 function GanttBar(gantt, id, dates, bgClass) {
     this.gantt = gantt;
     this.id = id;
@@ -89,46 +87,50 @@ GanttBar.prototype.draw = function draw() {
 
 function OIGantt(divid, startDate, endDate) {
     this.scales = [1000*60*5, 1000*60*60, 1000*60*60*6, 1000*60*60*24, 1000*60*60*24*7, "month", "year"];
-    this.unitFormats = ["i", "H:i", "H:i", "w", "d/m/Y", "m", "Y"];
-//    this.periodFormats = ["H:i", "H:i", "H:i", "d/m", "d/m", "m/Y", "Y"];
+    this.formats = {2: ["H:i", "x1w", "d/m", "m/y", "Y"], 3: ["x1w", "d/m", "x2m", "Y", "Y"]};
     this.startDate = startDate || new Date();
     this.endDate = endDate || this.startDate;
-    for(this.scale=0; (gantt.endDate-gantt.startDate)/this.scales[this.scale] > 1 || this.scale<5; this.scale++);
-    this.rowHeight = 25;
-    this.headerHeight = 31;
-    this.space = null;
+    this.endDate = endDate || this.startDate.add(this.scales[this.scale]*parentdiv.style.width());
+    this.rowHeight = 30;
+    this.headerHeight = 25;
     
     this.parentdiv = document.getElementById(divid);
     this.parentdiv.onscroll = makeObjectCallback(this.drawTimeline, this);
-    this.endDate = endDate || this.startDate.add(this.scales[this.scale]*parentdiv.style.width());
-    this.bars = [];
-    this.barids = {};
-    this.space = null;
-
+    for(this.scale=0; (this.endDate-this.startDate)/this.scales[this.scale] > this.parentdiv.clientWidth && this.scale<5; this.scale++);
     this.timeline = document.getElementById(divid).appendChild(document.createElement("canvas"));
-    this.timeline.style.position = "fixed";
+    this.timeline.style.position = "absolute";
     this.div = document.getElementById(divid).appendChild(document.createElement("div"));
     this.div.className = "ganttbg";
-    this.div.style.width = Math.max(this.parentdiv.clientWidth, (this.endDate-this.startDate)/this.scales[this.scale]);
+    this.div.style.width = Math.max(this.parentdiv.clientWidth, (this.endDate-this.startDate)/this.scales[this.scale]) + "px";
+    this.init();
 }
-OIGantt.prototype.getPeriodName = function getPeriodName(offset, formatIndex) {
+OIGantt.prototype.getPeriodName = function getPeriodName(offset, format) {
     var date = this.startDate.add((this.parentdiv.scrollLeft+offset)*this.scales[this.scale]);
-    return date.dateFormat(this.unitFormats[this.scale+formatIndex]);
+    return gettext(date.dateFormat(format));
+}
+OIGantt.prototype.getOffsetLeft = function getOffsetLeft(drawStartDate, period, lastOffset) {
+    var nextDate, lastDate = drawStartDate.add(this.scales[this.scale] * lastOffset);
+    if(period == "month") nextDate = new Date(lastDate.getFullYear(), lastDate.getMonth()+1, 1);
+    else if(period == "year") nextDate = new Date(lastDate.getFullYear()+1, 0, 1);
+    else nextDate = lastDate.add(period) - lastDate.add(period)%period;
+    if(period == 1000*60*60*24*7) {
+        nextDate += 1000*60*60*24*4; //datetime starts on a Thursday
+        if(nextDate-lastDate > 1000*60*60*24*7) nextDate -= 1000*60*60*24*7;
+    }
+    return (nextDate - drawStartDate) / this.scales[this.scale];
 }
 OIGantt.prototype.strokePeriods = function strokePeriods(ctx, color, scaleoffset) {
     var drawStartDate = this.startDate.add(this.parentdiv.scrollLeft*this.scales[this.scale]);
-    var offsetLeft = (drawStartDate.getTime() % this.scales[this.scale+scaleoffset]) / this.scales[this.scale];
     var offsetTop = 40 - 10*scaleoffset;
-    var period = this.scales[this.scale+scaleoffset] / this.scales[this.scale];
     
     ctx.beginPath();
     ctx.strokeStyle = color;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.translate(.5,0); //disable antialiasing for odd width lines
-    for(var x=offsetLeft; x < ctx.canvas.width; x += period) {
-        ctx.strokeText(this.getPeriodName(x, scaleoffset), x+2, offsetTop);
+    for(var x=this.getOffsetLeft(drawStartDate, this.scales[this.scale+scaleoffset], 0); x < ctx.canvas.width; x=this.getOffsetLeft(drawStartDate, this.scales[this.scale+scaleoffset], x)) {
+        ctx.strokeText(this.getPeriodName(x, this.formats[scaleoffset][this.scale]), x+2, offsetTop);
         ctx.moveTo(x,offsetTop);
-        ctx.lineTo(x,99);
+        ctx.lineTo(x,ctx.canvas.height-1);
     }
     ctx.stroke();
 }
@@ -162,17 +164,18 @@ OIGantt.prototype.zoom = function zoom() {
     if(this.scale > 0) this.scale--;
     this.redraw();
 }
-OIGantt.prototype.addBar = function addBar(id, dates, afterid, bgClass) {
+OIGantt.prototype.addLine = function addLine(id, dates, afterid, bgClass) {
     var newBar = new GanttBar(this, id, dates, "ganttbg"+(bgClass || 0));
     var pos = this.bars.indexOf(this.barids[afterid]) + 1;
     this.bars.splice(pos, 0, newBar);
     this.barids[id] = newBar;
-    this.div.style.height = this.rowHeight*this.bars.length + this.headerHeight;
+    this.div.style.height = this.rowHeight*this.bars.length + this.headerHeight + 15 + "px";
+    this.parentdiv.style.height = this.rowHeight*(this.bars.length+1) + this.headerHeight + 15 + "px";
 }
 OIGantt.prototype.addSpace = function addSpace(afterid) {
     if(this.space) this.bars.splice(this.bars.indexOf(this.space), 1);
     var pos = this.bars.indexOf(this.barids[afterid]) + 1
-    this.bars.splice(pos, 0, new GanttBar(this, id, [], "ganttspace"));
+    this.bars.splice(pos, 0, new GanttBar(this, 0, [], "ganttspace"));
     this.redraw();
     this.space = this.bars[pos];
     document.getElementById("ganttspace").style.top = (this.space.bgdiv.offsetTop+this.div.offsetTop) + "px";
@@ -187,6 +190,7 @@ OIGantt.prototype.hideLine = function hideLine(id, nbnext) {
     this.bars.splice(pos, 1 + nbnext);
 }
 OIGantt.prototype.showLine = function showLine(id, afterid) {
+    if(this.bars.indexOf(this.barids[id])) this.bars.splice(this.bars.indexOf(this.barids[id]), 1);
     var pos = this.bars.indexOf(this.barids[afterid]) + 1;
     this.bars.splice(pos, 0, this.barids[id]);
 }
@@ -195,4 +199,12 @@ OIGantt.prototype.highlight = function highlight(id) {
 }
 OIGantt.prototype.unhighlight = function unhighlight(id) {
     this.barids[id].bardiv.className = "";
+}
+OIGantt.prototype.selectLine = function selectLine(id){
+    this.barids[id].bgdiv.className = " ganttselected";
+}
+OIGantt.prototype.init = function init(id) {
+    this.bars = [];
+    this.barids = {};
+    this.space = null;
 }
