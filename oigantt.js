@@ -102,6 +102,12 @@ function OIGantt(divid, startDate, endDate) {
     this.div = document.getElementById(divid).appendChild(document.createElement("div"));
     this.div.className = "ganttbg";
     this.div.style.width = Math.max(this.parentdiv.clientWidth, (this.endDate-this.startDate)/this.scales[this.scale]) + "px";
+    this.div.onwheel = makeObjectCallback(function(event){
+            if(event.deltaY<0) this.zoom();
+            else this.unzoom();
+            event.stopPropagation();
+            return false;
+        }, this);
     this.init();
 }
 OIGantt.prototype.getPeriodName = function getPeriodName(offset, format) {
@@ -157,7 +163,7 @@ OIGantt.prototype.redraw = function redraw(barNb) {
         this.bars[i].draw();
 }
 OIGantt.prototype.unzoom = function unzoom() {
-    if(this.scale < 5) this.scale++;
+    if(this.scale < 4) this.scale++;
     this.redraw();
 }
 OIGantt.prototype.zoom = function zoom() {
